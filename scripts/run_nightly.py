@@ -1,16 +1,22 @@
 """
-Orchestrates the full nightly pipeline in the correct dependency order:
-  1. source_repos.py   — must run first; populates cited_arxiv_ids for step 3's cap
-  2. source_news.py    — depends on repos' arXiv citations for the volume cap
-  3. source_videos.py  — independent, order doesn't matter relative to 1/2
-  4. generate_digest.py — must run last; reads from all three tables
+Orchestrates the pipeline steps that run inside the Claude Code Routine:
+  1. ensure_schema.py    — must run first; adds any columns the scripts below expect
+  2. source_news.py      — depends on repos' arXiv citations (populated separately)
+  3. source_videos.py    — independent, order doesn't matter relative to news
+  4. generate_digest.py  — must run last; reads from all three tables
+
+NOTE: source_repos.py is NOT part of this script. It runs separately via
+GitHub Actions (.github/workflows/source-repos.yml), since Claude Code
+Routines restrict GitHub API traffic to only the attached repository. The
+routine runs `git pull` before this script, to pick up the Actions
+workflow's committed repo/arXiv data.
 
 Each step is isolated: a failure in one script is logged and the pipeline
 continues to the next step rather than aborting the whole night, since a
-broken YouTube run shouldn't prevent repos/news from being scored.
+broken YouTube run shouldn't prevent news from being scored.
 
 Exit code reflects overall health: 0 if all steps succeeded, 1 if any step
-failed — used by the routine to decide whether auto-merge is safe (see
+failed — used by the routine to decide whether it's safe to commit (see
 docs/routine_prompt.md's sanity-check requirement).
 """
 
@@ -22,7 +28,7 @@ from datetime import datetime, timezone
 
 SCRIPTS_DIR = Path(__file__).parent
 STEPS = [
-    ("source_repos.py", "GitHub repo sourcing"),
+    ("ensure_schema.py", "Schema migration (ensures DB matches script expectations)"),
     ("source_news.py", "News/RSS sourcing"),
     ("source_videos.py", "YouTube sourcing"),
     ("generate_digest.py", "Digest generation"),
@@ -35,7 +41,7 @@ def run_step(script_name, description):
     try:
         result = subprocess.run(
             [sys.executable, str(SCRIPTS_DIR / script_name)],
-            capture_output=True, text=True, timeout=3000,  # 50 min ceiling per step
+            capture_output=True, text=True, timeout=3000,
         )
         elapsed = time.time() - start
         print(result.stdout)
