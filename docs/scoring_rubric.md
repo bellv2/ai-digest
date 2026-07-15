@@ -68,7 +68,17 @@ Substance is computed from **measurable claim-to-evidence ratio**, not vibes. Us
 - Sponsored segment (detect via "sponsored," "this video is brought to you by," or YouTube's paid-promotion flag) occupies >30% of the video's runtime → cap at **2**
 - Video is a re-upload/clip compilation of another creator's content with no original analysis added (check: transcript >70% overlapping text with an earlier-published video on the same topic) → cap at **1**
 
-**Data to pull per video (via YouTube Data API + transcript):** `title`, `description`, `transcript_text`, `duration`, `published_at`, `channel_id`, `view_count`, sponsor-segment flag if available, word count of transcript for per-1000-word normalization.
+**Pre-screen gate (runs before transcript fetch attempt):**
+Testing during implementation revealed that most transcript-fetch failures aren't actually YouTube blocking the request — they're videos that simply have no captions at all, which the transcript library reports with a misleadingly generic "IP blocked" error message regardless of true cause. YouTube's own video metadata (`contentDetails.caption`) reports caption availability directly and reliably (~90% accuracy validated against live fetch attempts), so this is checked first and is decisive: if `caption != "true"`, no transcript attempt is made at all.
+
+For videos that do have captions available, a second cheap metadata-only check still applies before fetching, to skip videos unlikely to carry substantive evidence even if a transcript exists — reducing unnecessary calls and further limiting exposure to the genuine (rare) cloud-IP rate-limiting that still occurs occasionally:
+- Duration ≥ 120 seconds (very short Shorts rarely carry substantive evidence)
+- Description contains either a URL or ≥40 words (signals real content vs. a one-line caption)
+- Title isn't pure clickbait-hype phrasing with zero substantive keywords (tutorial, benchmark, build, compare, etc.)
+
+Videos that fail either gate are scored directly from title/description, capped at Substance ≤2 (same treatment as a failed transcript fetch), without attempting the transcript call. The skip reason is stored (`no_captions_available` or `skipped_prescreen:<reason>`) for auditability.
+
+**Data to pull per video (via YouTube Data API + transcript):** `title`, `description`, `transcript_text` (only if both gates pass), `duration`, `caption` (from contentDetails), `published_at`, `channel_id`, `view_count`, sponsor-segment flag if available, word count of transcript for per-1000-word normalization.
 
 ### News/Articles
 
@@ -187,6 +197,8 @@ Videos matching only generic money-making phrasing in the title (e.g. "make mone
 **Feed list (Tier 3 — velocity signal, weighted lower on substance by default per the rubric above):** VentureBeat, Hacker News (AI-tagged threads)
 
 **Pull method:** poll each feed's RSS endpoint every run; store `source_domain` against its tier so the Trend axis corroboration check (Axis 2, News section) can reference tier at scoring time.
+
+**arXiv volume cap:** arXiv's cs.AI feed publishes hundreds of papers daily — far more than the blog/editorial feeds — and would otherwise dominate the news pool numerically without being genuinely more newsworthy. Discovered during implementation testing (485 of 495 sourced items were raw arXiv papers in one run). Fix: an arXiv paper only enters the news pipeline if it's cited by a repo already sourced in the `repos` table (cross-referenced via arXiv ID extracted from repo READMEs, per the repo Substance rubric's Step 1 paper-reference check). This means `source_repos.py` must run before `source_news.py` in the nightly pipeline order for the cap to have data to check against. Papers with no repo implementation yet are excluded from news, not lost — they can still surface later if a repo citing them gets sourced in a future run.
 
 ---
 
