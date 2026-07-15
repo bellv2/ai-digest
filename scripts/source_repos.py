@@ -2,7 +2,7 @@
 Sources candidate repos from GitHub (by recency, not popularity), scores them
 per docs/scoring_rubric.md, and stores results in data/ai_digest.db.
 
-Requires GH_TOKEN in the environment (higher rate limits authenticated).
+Requires GH_API_TOKEN in the environment (higher rate limits authenticated).
 """
 
 import os
@@ -18,7 +18,7 @@ from db_utils import (
     get_snapshot_history, is_settled, mark_settled,
 )
 
-GITHUB_TOKEN = os.environ.get("GH_TOKEN")
+GITHUB_TOKEN = os.environ.get("GH_API_TOKEN")
 GITHUB_API = "https://api.github.com"
 
 HEADERS = {
@@ -84,7 +84,7 @@ def get_readme_text(repo_full_name):
         if resp.status_code == 200:
             return resp.text
         if resp.status_code == 403:
-            print(f"[warn] rate-limited fetching README for {repo_full_name} — check GH_TOKEN is set")
+            print(f"[warn] rate-limited fetching README for {repo_full_name} — check GH_API_TOKEN is set")
         elif resp.status_code != 404:
             print(f"[warn] unexpected status {resp.status_code} fetching README for {repo_full_name}")
     except requests.RequestException as e:
@@ -110,7 +110,7 @@ def get_commit_stats(repo_full_name):
                     dates.add(date_str[:10])
             return len(commits), len(dates)
         if resp.status_code == 403:
-            print(f"[warn] rate-limited fetching commits for {repo_full_name} — check GH_TOKEN is set")
+            print(f"[warn] rate-limited fetching commits for {repo_full_name} — check GH_API_TOKEN is set")
         elif resp.status_code != 409:  # 409 = empty repo, not an error worth logging
             print(f"[warn] unexpected status {resp.status_code} fetching commits for {repo_full_name}")
         return 0, 0
@@ -132,7 +132,7 @@ def get_repo_file_extensions(repo_full_name):
             tree = resp.json().get("tree", [])
             return any(entry["path"].lower().endswith(CODE_FILE_EXTENSIONS) for entry in tree if entry.get("type") == "blob")
         if resp.status_code == 403:
-            print(f"[warn] rate-limited fetching tree for {repo_full_name} — check GH_TOKEN is set")
+            print(f"[warn] rate-limited fetching tree for {repo_full_name} — check GH_API_TOKEN is set")
         elif resp.status_code != 404:
             print(f"[warn] unexpected status {resp.status_code} fetching tree for {repo_full_name}")
     except requests.RequestException as e:
@@ -253,7 +253,7 @@ def process_repo(conn, repo):
 
 def main():
     if not GITHUB_TOKEN:
-        print("[warn] GH_TOKEN not set — unauthenticated rate limit is only 60 requests/hour, "
+        print("[warn] GH_API_TOKEN not set — unauthenticated rate limit is only 60 requests/hour, "
               "the run will likely fail partway through. Set it before running for real.")
     conn = get_connection()
     repos = search_repos()
