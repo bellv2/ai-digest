@@ -22,7 +22,6 @@ from datetime import datetime, timezone
 
 SCRIPTS_DIR = Path(__file__).parent
 STEPS = [
-    ("ensure_schema.py", "Schema migration (ensures DB matches script expectations)"),
     ("source_repos.py", "GitHub repo sourcing"),
     ("source_news.py", "News/RSS sourcing"),
     ("source_videos.py", "YouTube sourcing"),
