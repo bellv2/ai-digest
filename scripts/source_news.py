@@ -226,13 +226,13 @@ def main():
                     url, content_type, title, date_first_seen, date_last_updated,
                     substance_score, substance_reasoning, substance_step1, substance_step2, substance_step3,
                     trend_score, trend_reasoning, vision_used, vision_tier, disqualifier_applied,
-                    included_in_digest, settled, source_domain, source_tier, published_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?)""",
+                    included_in_digest, settled, source_domain, source_tier, published_at, raw_excerpt
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?,?)""",
                 (
                     link, "news", title, now_iso(), now_iso(),
                     substance_score, substance_reasoning, s1, s2, s3,
                     trend_score, trend_reasoning, disqualifier,
-                    source_domain(link), tier, pub_dt.isoformat(),
+                    source_domain(link), tier, pub_dt.isoformat(), summary[:3000],
                 ),
             )
             print(f"[new] {title[:60]} — substance={substance_score} trend={trend_score} (tier {tier})")

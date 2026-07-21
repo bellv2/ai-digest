@@ -32,7 +32,16 @@ STEPS = [
     ("source_news.py", "News/RSS sourcing"),
     ("source_videos.py", "YouTube sourcing"),
     ("generate_digest.py", "Digest generation"),
+    ("generate_writeups.py", "Narrative writeup generation (Gemini)"),
+    ("generate_docx_report.py", "Word report generation"),
 ]
+
+# NOTE: source_repos.py is intentionally NOT run here. GitHub Actions runs it
+# separately (.github/workflows/source-repos.yml) since Claude Code Routines
+# restrict GitHub API traffic to only the attached repo, making GitHub's
+# search API unreachable from inside a routine. The routine instead pulls
+# the latest committed repo data via `git pull` before this script runs —
+# see docs/routine_prompt.md step 2.
 
 
 def run_step(script_name, description):
@@ -41,7 +50,7 @@ def run_step(script_name, description):
     try:
         result = subprocess.run(
             [sys.executable, str(SCRIPTS_DIR / script_name)],
-            capture_output=True, text=True, timeout=3000,
+            capture_output=True, text=True, timeout=3000,  # 50 min ceiling per step
         )
         elapsed = time.time() - start
         print(result.stdout)

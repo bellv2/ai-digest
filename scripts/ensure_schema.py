@@ -21,6 +21,8 @@ from db_utils import get_connection
 REQUIRED_COLUMNS = {
     "repos": [
         ("cited_arxiv_ids", "TEXT"),
+        ("raw_excerpt", "TEXT"),
+        ("writeup", "TEXT"),
     ],
     "videos": [
         ("title_sketchiness_score", "INTEGER"),
@@ -30,8 +32,13 @@ REQUIRED_COLUMNS = {
         ("neutral_link_count", "INTEGER"),
         ("comment_check_performed", "INTEGER DEFAULT 0"),
         ("comment_check_result", "TEXT"),
+        ("raw_excerpt", "TEXT"),
+        ("writeup", "TEXT"),
     ],
-    "news": [],
+    "news": [
+        ("raw_excerpt", "TEXT"),
+        ("writeup", "TEXT"),
+    ],
 }
 
 

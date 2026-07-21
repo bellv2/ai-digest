@@ -238,14 +238,14 @@ def process_repo(conn, repo):
             substance_score, substance_reasoning, substance_step1, substance_step2, substance_step3,
             trend_score, trend_reasoning, vision_used, vision_tier, disqualifier_applied,
             included_in_digest, settled, matched_topics, stargazers_count, forks_count, created_at,
-            cited_arxiv_ids
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?,?,?)""",
+            cited_arxiv_ids, raw_excerpt
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?,?,?,?)""",
         (
             url, "repo", repo.get("name"), now_iso(), now_iso(),
             substance_score, substance_reasoning, s1, s2, s3,
             trend_score, trend_reasoning, disqualifier,
             "", repo["stargazers_count"], repo["forks_count"], repo["created_at"],
-            ",".join(cited_arxiv_ids),
+            ",".join(cited_arxiv_ids), readme_text[:3000],
         ),
     )
     print(f"[new] {full_name} — substance={substance_score} trend={trend_score}")

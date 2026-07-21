@@ -1,3 +1,4 @@
 requests
 feedparser
 youtube-transcript-api
+python-docx

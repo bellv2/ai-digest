@@ -303,8 +303,9 @@ def process_video(conn, video_id, video_data, matched_keywords):
             trend_score, trend_reasoning, baseline_method, vision_used, vision_tier, disqualifier_applied,
             included_in_digest, settled, matched_keywords, channel_id, published_at, view_count,
             title_sketchiness_score, description_sketchiness_score, resource_link_count,
-            promo_link_count, neutral_link_count, comment_check_performed, comment_check_result
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?,?,?,?,?,?,?,?,?)""",
+            promo_link_count, neutral_link_count, comment_check_performed, comment_check_result,
+            raw_excerpt
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,'none',?,'[]',0,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             url, "video", title, now_iso(), now_iso(),
             substance_score, substance_reasoning, s1, s2, s3,
@@ -313,6 +314,7 @@ def process_video(conn, video_id, video_data, matched_keywords):
             prefilter["title_sketchiness_score"], prefilter["description_sketchiness_score"],
             prefilter["resource_link_count"], prefilter["promo_link_count"], prefilter["neutral_link_count"],
             prefilter["comment_check_performed"], prefilter["comment_check_result"],
+            (transcript_text or description)[:3000],
         ),
     )
     log_snapshot(conn, url, "video", "view_count", view_count)
